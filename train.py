@@ -135,25 +135,21 @@ def train(dataloader, load_model = False, save_model = True, num_epochs = 2) :
     return model
 
 
-def get_predictions(dataloader, model) :
+def get_predictions(dataloader, model):
     torch.backends.cudnn.benchmark = True
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     writer = SummaryWriter('runs/evals')
-    step = 0
-
     criterion = nn.CrossEntropyLoss(ignore_index= train_dataset.head_vocab.stoi['<PAD>'])
 
     # Calculating validation loss:
     loop = tqdm(enumerate(dataloader), total = len(dataloader),leave = True)
-    for batch, (head, body, stance) in loop :
-            outputs = model(head.to(device), body.to(device))
+    for step, (batch, (head, body, stance)) in enumerate(loop):
+        outputs = model(head.to(device), body.to(device))
 
-            loss = criterion(outputs.float(), stance.to(device).long())
+        loss = criterion(outputs.float(), stance.to(device).long())
 
-            writer.add_scalar('Validation Loss', loss.item(), step)
-            step += 1
-
+        writer.add_scalar('Validation Loss', loss.item(), step)
     # Calculating score
     all_preds, all_actual = np.array([]), np.array([])
     model.eval()

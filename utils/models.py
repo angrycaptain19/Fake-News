@@ -12,11 +12,10 @@ class HeadingsLSTM(nn.Module) :
         self.linear = nn.Linear(hidden_size, hidden_size)
         self.dropout = nn.Dropout(0.5)
         
-    def forward(self, headings) :
+    def forward(self, headings):
         embedds = self.dropout(self.embeddings(headings))
         outs,ht = self.lstm(embedds)
-        outputs = self.linear(ht[-1])
-        return outputs
+        return self.linear(ht[-1])
 
 class BodyLSTM(nn.Module) :
     def __init__(self, embed_size, hidden_size, vocab_size, num_layers) :
@@ -28,12 +27,11 @@ class BodyLSTM(nn.Module) :
         self.linear = nn.Linear(hidden_size, hidden_size)
         self.dropout = nn.Dropout(0.5)
         
-    def forward(self, bodies) :
+    def forward(self, bodies):
         embedds = self.dropout(self.embeddings(bodies))
         #outs,(ht, ct) = self.lstm(embedds)
         outs, ht = self.lstm(embedds)
-        outputs = self.linear(ht[-1])
-        return outputs
+        return self.linear(ht[-1])
     
 
 class Classifier(nn.Module) :

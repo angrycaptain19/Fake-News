@@ -21,9 +21,8 @@ def get_val(row):
 # train_stances.to_csv('fnc-1/changed/ntrain_headings.csv')
 # train_bodies.to_csv('fnc-1/changed/ntrain_bodies.csv')
 
-def get_body(bid) :
-    body  = train_bodies['articleBody'][train_bodies['Body ID'] == bid].item()
-    return body
+def get_body(bid):
+    return train_bodies['articleBody'][train_bodies['Body ID'] == bid].item()
 
 train_stances['Stance'] = train_stances['Stance'].apply(lambda x: LABELS[x])
 print(train_bodies.columns)

@@ -167,18 +167,16 @@ def train(dataloader, learning_rate = 3e-3, load_model = False, save_model = Tru
     return model
 
 
-def get_predictions(dataloader, model) :
+def get_predictions(dataloader, model):
     torch.backends.cudnn.benchmark = True
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     writer = SummaryWriter('runs/clfd-evals')
-    step = 0
-
     criterion = nn.CrossEntropyLoss()
     val_loss = 0.0
     # Calculating validation loss:
     loop = tqdm(enumerate(dataloader), total = len(dataloader),leave = True)
-    for batch, (head, body, stance) in loop :
+    for step, (batch, (head, body, stance)) in enumerate(loop):
 
         _, outputs = model(head.float().to(device), body.float().to(device))
         outputs = outputs.squeeze(1)
@@ -186,7 +184,6 @@ def get_predictions(dataloader, model) :
 
         writer.add_scalar('Validation Batch Loss', loss.item(), step)
         val_loss += loss.item()
-        step += 1
     print(f'Validation Loss: {val_loss / len(dataloader)}')
 
     # Calculating score
@@ -200,7 +197,7 @@ def get_predictions(dataloader, model) :
 
         all_preds = np.append(all_preds, preds.cpu().detach().numpy())
         all_actual = np.append(all_actual, stance.cpu().detach().numpy())
-        
+
     get_scores(all_preds, all_actual)
     
 

@@ -86,21 +86,17 @@ class CLFDCollate:
 
     def custom_padding(self, sequences, vocab, batch_first = True, padding_value = '0'):
         
-        max_len = max([s.shape[0] for s in sequences])
+        max_len = max(s.shape[0] for s in sequences)
 
         # important to specify dtype as "object" for arbitrary length strings in numpy
         if batch_first:
             output = np.full((len(sequences), max_len), padding_value, dtype=object)
         else:
             output = np.full((max_len, len(sequences)), padding_value, dtype=object)
-        
+
         for item in sequences: 
             for i, token in enumerate(item):
-                if token in vocab: 
-                    item[i] = vocab[token]
-                else :
-                    item[i] = '0.0'
-        
+                item[i] = vocab[token] if token in vocab else '0.0'
         for i, item in enumerate(sequences):
             length_of_list = item.shape[0]
             if batch_first:
@@ -125,33 +121,31 @@ def get_loader(dataset_inst,
                batch_size = 4,
                num_workers = 4,
                shuffle = True,
-               pin_memory = True) :
+               pin_memory = True):
     dataset = dataset_inst
-    
+
     pad_idx = dataset.head_vocab.stoi['<PAD>']
-    
-    loader = DataLoader(dataset = dataset,
+
+    return DataLoader(dataset = dataset,
                        batch_size = batch_size,
                        num_workers = num_workers,
                        shuffle = shuffle,
                        pin_memory = pin_memory,
                        collate_fn = MyCollate(pad_idx = pad_idx))
-    return loader
 
 def transformer_loader(dataset_inst,
                batch_size = 4,
                num_workers = 4,
                shuffle = True,
-               pin_memory = True) :
+               pin_memory = True):
     dataset = dataset_inst
 
-    loader = DataLoader(dataset = dataset,
+    return DataLoader(dataset = dataset,
                        batch_size = batch_size,
                        num_workers = num_workers,
                        shuffle = shuffle,
                        pin_memory = pin_memory,
                        collate_fn = NewsCollate())
-    return loader
 
 
 def clfd_loader(dataset_inst,
@@ -160,16 +154,15 @@ def clfd_loader(dataset_inst,
                batch_size = 4,
                num_workers = 4,
                shuffle = True,
-               pin_memory = True) :
+               pin_memory = True):
     dataset = dataset_inst
 
-    loader = DataLoader(dataset = dataset,
+    return DataLoader(dataset = dataset,
                        batch_size = batch_size,
                        num_workers = num_workers,
                        shuffle = shuffle,
                        pin_memory = pin_memory,
                        collate_fn = CLFDCollate(head_vocab, body_vocab))
-    return loader
 
 class Vocabulary :
     def __init__(self, freq_threshold) :

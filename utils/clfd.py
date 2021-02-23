@@ -57,20 +57,22 @@ def calculate_clfr(self_total, rem_total, class_tok, rem_class_tok, all_toks):
     total_rem = sum(rem_total)
     rem_class_term_occ = rem_class_tok # list of remaining class term occs
     class_clfr = dict.fromkeys(all_toks.keys()) # class specific clfr scores for all tokens
-   
+
     for tok in all_toks:
         try: 
             term_occ = class_tok[tok]
         except KeyError:
             term_occ = 0
-        
-        rem_term_occ = 0
-        for class_term_occ in rem_class_term_occ :
-            if tok in class_term_occ:
-                rem_term_occ += class_term_occ[tok]
+
+        rem_term_occ = sum(
+            class_term_occ[tok]
+            for class_term_occ in rem_class_term_occ
+            if tok in class_term_occ
+        )
+
         clfr = np.log((((1 + term_occ) * total_rem) / ((1 + rem_term_occ) * total)) +1)
         class_clfr[tok] = clfr
-    
+
     return class_clfr
 
 def term_freq_calculator(dataframe, column_name) :
@@ -83,15 +85,18 @@ def term_freq_calculator(dataframe, column_name) :
     return get_term_frequencies(all_token_text)
 
         
-def get_clfd(clfr_list, all_class_clfr) :
+def get_clfd(clfr_list, all_class_clfr):
     clfd = {}
-    for tok in clfr_list :
-        clfd_val = max([x[tok] for x in all_class_clfr]) - min([x[tok] for x in all_class_clfr])
+    for tok in clfr_list:
+        clfd_val = max([x[tok] for x in all_class_clfr]) - min(
+            x[tok] for x in all_class_clfr
+        )
+
         clfd[tok] = clfd_val
     return clfd
 
 
-def calculate_clfd_vec(dataframe, column_name = 'Headline') : 
+def calculate_clfd_vec(dataframe, column_name = 'Headline'): 
     unrelated_dataframe = dataframe[dataframe['Stance'] == 0]
     discuss_dataframe = dataframe[dataframe['Stance'] == 1]
     disagree_dataframe = dataframe[dataframe['Stance'] == 2]
@@ -102,20 +107,20 @@ def calculate_clfd_vec(dataframe, column_name = 'Headline') :
     disagree_occ, disagree_tots = class_term_occ(disagree_dataframe, column_name)
     agree_occ, agree_tots = class_term_occ(agree_dataframe, column_name)
 
-    
+
     # all_tokens = set(unrelated_occ.keys()).update(set(discuss_occ.keys())).update(set(disagree_occ.keys())).update(set(agree_occ.keys()))
     all_tokens = set(unrelated_occ.keys())
     all_tokens.update(discuss_occ.keys())
     all_tokens.update(set(disagree_occ.keys()))
     all_tokens.update(set(agree_occ.keys()))
     all_class_tokens = dict.fromkeys(list(all_tokens))
-       
+
 
     unrelated_clfr = calculate_clfr(unrelated_tots, 
                                     (discuss_tots, disagree_tots, agree_tots), 
                                     unrelated_occ, 
                                     [discuss_occ, disagree_occ, agree_occ],
-                                    all_class_tokens)   
+                                    all_class_tokens)
     discuss_clfr = calculate_clfr(discuss_tots, 
                                     (unrelated_tots, disagree_tots, agree_tots), 
                                     discuss_occ, 
@@ -131,16 +136,14 @@ def calculate_clfd_vec(dataframe, column_name = 'Headline') :
                                     agree_occ, 
                                     [discuss_occ, disagree_occ, unrelated_occ],
                                     all_class_tokens)
-                                                            
-    clfd_vec = get_clfd(unrelated_clfr, [unrelated_clfr, discuss_clfr, disagree_clfr, agree_clfr])
 
-    return clfd_vec
+    return get_clfd(
+        unrelated_clfr,
+        [unrelated_clfr, discuss_clfr, disagree_clfr, agree_clfr],
+    )
 
-def calculate_tf_clfd(clfd, tf) :
-    tf_clfd = {}
-    for tok in clfd :
-        tf_clfd[tok] = clfd[tok] * tf[tok]
-    return tf_clfd
+def calculate_tf_clfd(clfd, tf):
+    return {tok: clfd[tok] * tf[tok] for tok in clfd}
 
 def save_csv(clfd_dict, path) :
     clfd_df = pd.Series(clfd_dict).to_frame()
